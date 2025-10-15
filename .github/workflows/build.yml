@@ -76,12 +76,12 @@ jobs:
             zip unzip autoconf libtool pkg-config libncurses5-dev \
             libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
 
-      # Set up Java 17 (required by Gradle)
-      - name: Setup Java 17 required by Gradle
+      # ✅ Step 1: Pin Java to version 8 for compatibility with Android toolchain
+      - name: Setup Java 8 for Buildozer
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '8'
 
       # Set up Python 3.10
       - name: Set up Python
@@ -95,12 +95,14 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
 
-      # Run Buildozer with verbose logging and capture output to a file
+      # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
         env:
           ANDROID_NDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
           ANDROIDNDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
           P4A_LOG_LEVEL: "2"
         run: |
           set -eux
