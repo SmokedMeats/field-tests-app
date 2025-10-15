@@ -134,6 +134,12 @@ jobs:
                       echo "Listing all subfolders and contents of bin"
                       ls -laR bin
 
+                      echo "Listing contents of dists/"
+                      ls -la .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists || true
+
+                      echo "Recursively searching for APKs inside dists/"
+                      find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists -name "*.apk" || true
+
       # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
         run: |
