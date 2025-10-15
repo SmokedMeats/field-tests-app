@@ -1,4 +1,7 @@
+# This workflow builds your Android app using Buildozer and uploads the APK and build logs
 name: Android Build
+
+# Trigger the workflow on pushes and pull requests to main
 on:
   push:
     branches:
@@ -6,19 +9,24 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
+    runs-on: ubuntu-22.04  # GitHub-hosted runner
 
-      # Used to cache dependencies with a timeout
+    steps:
+      # Checkout your repository code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Generate a UTC date string to use in cache keys
       - name: Get Date
         id: get-date
         run: |
           echo "date=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
+      # Cache global Buildozer directory to avoid re-downloading SDK/NDK
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
@@ -27,6 +35,7 @@ jobs:
           restore-keys: |
             buildozer-global-${{ runner.os }}-
 
+      # Cache per-project Buildozer directory
       - name: Cache Buildozer directory in app
         uses: actions/cache@v4
         with:
@@ -35,6 +44,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
+      # Cache Android SDK
       - name: Cache Android SDK
         uses: actions/cache@v4
         with:
@@ -43,6 +53,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-sdk-
 
+      # Cache Android NDK (r25b)
       - name: Cache Android NDK
         uses: actions/cache@v4
         with:
@@ -51,83 +62,91 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-ndk-
 
-      # Install dependencies
+      # Install system packages required for Buildozer and Python-for-Android
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt-get install -y \
-            build-essential \
-            git \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            libunwind-dev \
-            zlib1g-dev
-          sudo apt-get install -y \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            zlib1g-dev \
-            openssl \
-            libgdbm-dev \
-            libgdbm-compat-dev \
-            liblzma-dev \
-            libreadline-dev \
-            uuid-dev \
-            libgstreamer1.0 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good
-          sudo apt-get install -y \
-            zip \
-            unzip \
-            autoconf \
-            libtool \
-            pkg-config \
-            libncurses5-dev \
-            libncursesw5-dev \
-            libtinfo5 \
-            cmake \
-            libffi-dev \
-            libssl-dev \
-            automake
+            build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
+            libavformat-dev libavcodec-dev libunwind-dev zlib1g-dev \
+            libsqlite3-dev sqlite3 bzip2 libbz2-dev openssl libgdbm-dev \
+            libgdbm-compat-dev liblzma-dev libreadline-dev uuid-dev \
+            libgstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            zip unzip autoconf libtool pkg-config libncurses5-dev \
+            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
 
-      # Set up Java 17 required by Gradle
+      # Set up Java 17 (required by Gradle)
       - name: Setup Java 17 required by Gradle
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Set up Python
+      # Set up Python 3.10
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # Install pip dependencies
+      # Install pip dependencies including pinned Cython and plyer from GitHub
       - name: Install pip dependencies
         run: |
           pip install --upgrade pip
           pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
 
-      # Build with Buildozer
-      - name: Build with Buildozer
+      # Run Buildozer with verbose logging and capture output to a file
+      - name: Build with Buildozer (verbose)
         id: buildozer
+        env:
+          ANDROID_NDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          ANDROIDNDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          P4A_LOG_LEVEL: "2"
         run: |
-          yes | buildozer -v android debug
+          set -eux
+          echo "Using NDK: $ANDROID_NDK"
+          yes | buildozer -v android debug deploy run log_level=2 > build_log.txt 2>&1 || true
+          mkdir -p artifacts
+          cp build_log.txt artifacts/build_log.txt
 
-      # Upload APK artifact
+      # Show output files to help locate APK if bin/*.apk is missing
+      - name: Show build output
+        run: |
+          echo "Listing top-level files"
+          ls -la
+          echo "Listing bin directory"
+          ls -la bin || true
+          echo "Listing common Android output dirs"
+          ls -la app/build/outputs/apk || true
+          ls -la build || true
+
+      # Upload verbose build log for inspection
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: artifacts/build_log.txt
+
+      # ✅ List all APKs to verify build output
+      - name: List APK files
+        run: |
+          echo "Searching for APKs..."
+          find . -name "*.apk" || echo "No APKs found."
+
+      # ⚠️ Warn if no APKs were found
+      - name: Warn if no APKs found
+        run: |
+          if ! find . -name "*.apk" | grep -q .; then
+            echo "⚠️ No APKs found. Check if Buildozer completed successfully or if APKs are placed in a custom path."
+          fi
+
+      # 📦 Upload APK artifact if present in any common location
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: |
             bin/*.apk
+            app/build/outputs/apk/**/*.apk
+            **/build/outputs/apk/**/*.apk
           retention-days: 3
