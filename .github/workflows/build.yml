@@ -127,7 +127,20 @@ jobs:
           name: build-log
           path: artifacts/build_log.txt
 
-      # Upload APK artifact if present in any common location
+      # ✅ List all APKs to verify build output
+      - name: List APK files
+        run: |
+          echo "Searching for APKs..."
+          find . -name "*.apk" || echo "No APKs found."
+
+      # ⚠️ Warn if no APKs were found
+      - name: Warn if no APKs found
+        run: |
+          if ! find . -name "*.apk" | grep -q .; then
+            echo "⚠️ No APKs found. Check if Buildozer completed successfully or if APKs are placed in a custom path."
+          fi
+
+      # 📦 Upload APK artifact if present in any common location
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
