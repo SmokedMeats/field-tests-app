@@ -1,54 +1,50 @@
-# Workflow name shown in GitHub Actions UI
+# This workflow builds your Android app using Buildozer and uploads the APK and build logs
 name: Android Build
 
-# When to run the workflow
+# Trigger the workflow on pushes and pull requests to main
 on:
   push:
     branches:
-      - main    # run on pushes to main
+      - main
   pull_request:
     branches:
-      - main    # run on PRs targeting main
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # runner environment
+    runs-on: ubuntu-22.04  # GitHub-hosted runner
 
     steps:
-      # Checkout repository to workspace
+      # Checkout your repository code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create a date value used to seed cache keys so caches expire periodically
+      # Generate a UTC date string to use in cache keys
       - name: Get Date
         id: get-date
         run: |
-          # write a UTC date to the GITHUB_ENV for use in cache keys
           echo "date=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
-      # Cache Buildozer global directory to speed repeated runs
+      # Cache global Buildozer directory to avoid re-downloading SDK/NDK
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
-          # buildozer stores downloaded Android SDK/NDK and packages here
           path: ~/.buildozer
-          # key includes date to allow periodic refresh and hash of buildozer.spec to invalidate on config change
           key: buildozer-global-${{ runner.os }}-${{ env.date }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             buildozer-global-${{ runner.os }}-
 
-      # Cache the project's .buildozer directory to preserve per-app downloads
+      # Cache per-project Buildozer directory
       - name: Cache Buildozer directory in app
         uses: actions/cache@v4
         with:
           path: .buildozer
-          # include run id and spec hash so key changes when buildozer.spec changes
           key: ${{ runner.os }}-buildozer-${{ github.run_id }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      # Cache Android SDK tree used by Buildozer/python-for-android
+      # Cache Android SDK
       - name: Cache Android SDK
         uses: actions/cache@v4
         with:
@@ -57,7 +53,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-sdk-
 
-      # Cache a pinned NDK directory (r25b here) to avoid repeated downloads
+      # Cache Android NDK (r25b)
       - name: Cache Android NDK
         uses: actions/cache@v4
         with:
@@ -66,108 +62,78 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-android-ndk-
 
-      # Install OS-level packages required to build Python, SDL2, and media libs
+      # Install system packages required for Buildozer and Python-for-Android
       - name: Install dependencies
         run: |
           sudo apt update
-          # core build tools and multimedia dev libs
           sudo apt-get install -y \
-            build-essential \
-            git \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            libunwind-dev \
-            zlib1g-dev
-          # Python build dependencies and compression/db libraries
-          sudo apt-get install -y \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            zlib1g-dev \
-            openssl \
-            libgdbm-dev \
-            libgdbm-compat-dev \
-            liblzma-dev \
-            libreadline-dev \
-            uuid-dev \
-            libgstreamer1.0 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good
-          # misc tools used by buildozer and building CPython
-          sudo apt-get install -y \
-            zip \
-            unzip \
-            autoconf \
-            libtool \
-            pkg-config \
-            libncurses5-dev \
-            libncursesw5-dev \
-            libtinfo5 \
-            cmake \
-            libffi-dev \
-            libssl-dev \
-            automake
+            build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
+            libavformat-dev libavcodec-dev libunwind-dev zlib1g-dev \
+            libsqlite3-dev sqlite3 bzip2 libbz2-dev openssl libgdbm-dev \
+            libgdbm-compat-dev liblzma-dev libreadline-dev uuid-dev \
+            libgstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            zip unzip autoconf libtool pkg-config libncurses5-dev \
+            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
 
-      # Set up Java 17 since modern Gradle requires Java 17+
+      # Set up Java 17 (required by Gradle)
       - name: Setup Java 17 required by Gradle
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'   # Temurin OpenJDK distribution
-          java-version: '17'       # Java 17 for Gradle
+          distribution: 'temurin'
+          java-version: '17'
 
-      # Prepare the Python runtime on the runner
+      # Set up Python 3.10
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'   # match your project's Python version
+          python-version: '3.10'
 
-      # Install Python packages needed to run Buildozer and helper libs
+      # Install pip dependencies including pinned Cython and plyer from GitHub
       - name: Install pip dependencies
         run: |
-          # update pip then install Buildozer and required pins
           pip install --upgrade pip
-          # pin Cython to known-good version; install buildozer; install plyer from GitHub (example)
           pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
 
-      # Build with Buildozer; capture full output even if the command fails
+      # Run Buildozer with verbose logging and capture output to a file
       - name: Build with Buildozer (verbose)
         id: buildozer
         env:
-          # Force the NDK path used by python-for-android; adjust if your runner uses a different path
           ANDROID_NDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
           ANDROIDNDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
-          # Increase python-for-android verbosity so clang errors are visible
           P4A_LOG_LEVEL: "2"
         run: |
           set -eux
-          # print chosen NDK for debugging in logs
           echo "Using NDK: $ANDROID_NDK"
-          # run buildozer; pipe full stdout/stderr to build_log.txt; allow non-zero exit so we can upload log
           yes | buildozer -v android debug deploy run log_level=2 > build_log.txt 2>&1 || true
-          # prepare artifacts folder for upload
           mkdir -p artifacts
           cp build_log.txt artifacts/build_log.txt
 
-      # Upload the verbose build log artifact so you can inspect compiler errors in Actions UI
+      # Show output files to help locate APK if bin/*.apk is missing
+      - name: Show build output
+        run: |
+          echo "Listing top-level files"
+          ls -la
+          echo "Listing bin directory"
+          ls -la bin || true
+          echo "Listing common Android output dirs"
+          ls -la app/build/outputs/apk || true
+          ls -la build || true
+
+      # Upload verbose build log for inspection
       - name: Upload build log
         uses: actions/upload-artifact@v4
         with:
           name: build-log
           path: artifacts/build_log.txt
 
-      # Upload resulting APK(s) when build succeeds
+      # Upload APK artifact if present in any common location
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: |
             bin/*.apk
+            app/build/outputs/apk/**/*.apk
+            **/build/outputs/apk/**/*.apk
           retention-days: 3
