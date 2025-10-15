@@ -126,6 +126,14 @@ jobs:
                       echo "Searching for APKs anywhere in the project"
                       find . -name "*.apk" || true
 
+                      echo "Listing contents of .buildozer/android/platform/build-arm64-v8a_armeabi-v7a"
+                      ls -la .buildozer/android/platform/build-arm64-v8a_armeabi-v7a
+
+                      find .buildozer -type f -name "*.apk"
+
+                      echo "Listing all subfolders and contents of bin"
+                      ls - laR bin
+
       # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
         run: |
