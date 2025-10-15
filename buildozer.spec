@@ -42,7 +42,8 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,reportlab,plyer,pyjnius==master
+requirements = python3,kivy,reportlab,plyer,pyjnius==1.4.0,Cython==0.29.36
+android.arch = arm64-v8a
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
