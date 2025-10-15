@@ -111,9 +111,9 @@ jobs:
           mkdir -p artifacts
           cp build_log.txt artifacts/build_log.txt
 
-          # 🔍 Inspect Buildozer output directories
-          - name: Inspect Buildozer output
-                 run: |
+      # 🔍 Inspect Buildozer output directories
+      - name: Inspect Buildozer output
+        run: |
                       echo "Listing contents of bin/"
                       ls -la bin || true
 
