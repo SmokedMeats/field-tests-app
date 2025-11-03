@@ -111,6 +111,24 @@ jobs:
           mkdir -p artifacts
           cp build_log.txt artifacts/build_log.txt
 
+        # Show output files to help locate APK if bin/*.apk is missing
+      - name: Show build output
+        run: |
+          echo "Listing top-level files"
+          ls -la
+          echo "Listing bin directory"
+          ls -la bin || true
+          echo "Listing common Android output dirs"
+          ls -la app/build/outputs/apk || true
+          ls -la build || true
+
+      # Upload verbose build log for inspection
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: artifacts/build_log.txt
+
       # 🔍 Inspect Buildozer output directories
       - name: Inspect Buildozer output
         run: |
@@ -142,33 +160,6 @@ jobs:
 
                       echo "Recursively searching for APKs inside dists/"
                       find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists -name "*.apk" || true
-
-                      - name: Show Build Log
-                      run: cat artifacts/build_log.txt
-
-                      - name: Upload Build Log
-                      uses: actions/upload-artifact@v3
-                      with:
-                        name: buildozer-build-log
-                        path: artifacts/build_log.txt
-
-      # Show output files to help locate APK if bin/*.apk is missing
-      - name: Show build output
-        run: |
-          echo "Listing top-level files"
-          ls -la
-          echo "Listing bin directory"
-          ls -la bin || true
-          echo "Listing common Android output dirs"
-          ls -la app/build/outputs/apk || true
-          ls -la build || true
-
-      # Upload verbose build log for inspection
-      - name: Upload build log
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: artifacts/build_log.txt
 
       # ✅ List all APKs to verify build output
       - name: List APK files
