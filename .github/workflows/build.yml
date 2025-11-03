@@ -112,8 +112,8 @@ jobs:
           mkdir -p artifacts
           cp build_log.txt artifacts/build_log.txt
 
-        - name: Show Buildozer log tail
-          run: |
+      - name: Show Buildozer log tail
+        run: |
             echo "Last 100 lines of Buildozer log:"
             tail -n 100 ~/.buildozer/build.log || echo "No build log found"
 
