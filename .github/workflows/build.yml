@@ -108,8 +108,8 @@ jobs:
         run: |
           set -eux
           echo "Using NDK: $ANDROID_NDK"
-          yes | buildozer -v android debug deploy run log_level=2 > build_log.txt 2>&1 || true
           mkdir -p artifacts
+          yes | buildozer -v android debug deploy run log_level=2 | tee artifacts/build_log.txt || true
           cp build_log.txt artifacts/build_log.txt
 
       - name: Show Buildozer log tail
