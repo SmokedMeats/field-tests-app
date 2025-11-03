@@ -103,6 +103,7 @@ jobs:
           ANDROIDNDK: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
           ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/android-ndk-r25b
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
           P4A_LOG_LEVEL: "2"
         run: |
           set -eux
@@ -110,6 +111,11 @@ jobs:
           yes | buildozer -v android debug deploy run log_level=2 > build_log.txt 2>&1 || true
           mkdir -p artifacts
           cp build_log.txt artifacts/build_log.txt
+
+        - name: Show Buildozer log tail
+          run: |
+            echo "Last 100 lines of Buildozer log:"
+            tail -n 100 ~/.buildozer/build.log || echo "No build log found"
 
         # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
