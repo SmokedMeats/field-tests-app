@@ -143,6 +143,9 @@ jobs:
                       echo "Recursively searching for APKs inside dists/"
                       find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists -name "*.apk" || true
 
+                      - name: Show Build Log
+                      run: cat artifacts/build_log.txt
+
       # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
         run: |
