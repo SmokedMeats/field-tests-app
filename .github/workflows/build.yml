@@ -94,7 +94,10 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
-
+          
+      - name: Clean Buildozer cache
+        run: rm -rf .buildozer
+  
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
@@ -106,11 +109,10 @@ jobs:
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
           P4A_LOG_LEVEL: "2"
         run: |
-          set -eux
-          echo "Using NDK: $ANDROID_NDK"
-          mkdir -p artifacts
-          yes | buildozer -v android debug deploy run log_level=2 | tee artifacts/build_log.txt || true
-          cp build_log.txt artifacts/build_log.txt
+         set -eux
+         echo "Using NDK: $ANDROID_NDK"
+         mkdir -p artifacts
+         yes | buildozer -v android debug deploy run log_level=2 | tee artifacts/build_log.txt || true
 
       - name: Show Buildozer log tail
         run: |
