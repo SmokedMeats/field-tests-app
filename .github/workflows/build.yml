@@ -146,6 +146,12 @@ jobs:
                       - name: Show Build Log
                       run: cat artifacts/build_log.txt
 
+                      - name: Upload Build Log
+                      uses: actions/upload-artifact@v3
+                      with:
+                        name: buildozer-build-log
+                        path: artifacts/build_log.txt
+
       # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
         run: |
