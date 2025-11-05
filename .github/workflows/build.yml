@@ -117,7 +117,7 @@ jobs:
       - name: Show Buildozer log tail
         run: |
             echo "Last 100 lines of Buildozer log:"
-            tail -n 100 ~/.buildozer/build.log || echo "No build log found"
+            tail -n 100 artifacts/build_log.txt || echo "No build log found"
 
         # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
