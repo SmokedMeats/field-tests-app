@@ -111,8 +111,8 @@ jobs:
         run: |
          set -eux
          echo "Using NDK: $ANDROID_NDK"
-         mkdir -p artifacts
-         yes | buildozer -v android debug deploy run log_level=2 | tee artifacts/build_log.txt || true
+         mkdir -p artifacts # Build only (no deploy/run) and fail on error; capture verbose log
+         buildozer -v android debug build 2>&1 | tee artifacts/build_log.txt
 
       - name: Show Buildozer log tail
         run: |
@@ -188,7 +188,9 @@ jobs:
         with:
           name: package
           path: |
-            bin/*.apk
-            app/build/outputs/apk/**/*.apk
-            **/build/outputs/apk/**/*.apk
+            .buildozer/android/platform/build-/dists//.apk
+            .buildozer/android/platform/build-/dists//bin/.apk
+            bin/.apk
+            app/build/outputs/apk//.apk
+            retention-days: 3
           retention-days: 3
