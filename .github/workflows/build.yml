@@ -98,12 +98,7 @@ jobs:
       - name: Clean Buildozer cache
         run: rm -rf .buildozer
              rm -rf ~/.buildozer
-             
-      - name: Accept Android SDK licenses
-        run: yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-  
+               
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
@@ -119,6 +114,11 @@ jobs:
          echo "Using NDK: $ANDROID_NDK"
          mkdir -p artifacts # Build only (no deploy/run) and fail on error; capture verbose log
          buildozer -v android debug build 2>&1 | tee artifacts/build_log.txt
+
+      - name: Accept Android SDK licenses
+        run: yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
 
       - name: Show Buildozer log tail
         run: |
