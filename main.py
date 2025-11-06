@@ -453,7 +453,7 @@ class AddCurveScreen(Screen):
         self.moisture_limits = BoxLayout()
         self.moisture_limits.add_widget(TextInput(hint_text="Lower Limit"))
         self.moisture_limits.add_widget(TextInput(hint_text="Upper Limit"))
-        self.notes = TextInput(hint_text="Notes"
+        self.notes = TextInput(hint_text="Notes")
 
 # Archive Screen
 class ArchiveScreen(Screen):
