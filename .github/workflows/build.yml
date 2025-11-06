@@ -118,7 +118,7 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses
         env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_HOME: $HOME/.buildozer/android/platform/android-sdk
 
       - name: Show Buildozer log tail
         run: |
