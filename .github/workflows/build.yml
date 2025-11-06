@@ -126,11 +126,6 @@ jobs:
       - name: Install Android API level 34
         run: $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-34"
       
-      - name: Show Buildozer log tail
-        run: |
-            echo "Last 100 lines of Buildozer log:"
-            tail -n 100 artifacts/build_log.txt || echo "No build log found"
-
         # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
         run: |
