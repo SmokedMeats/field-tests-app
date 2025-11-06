@@ -201,6 +201,11 @@ jobs:
           echo "Last 100 lines of Buildozer log:"
           tail -n 100 artifacts/build_log.txt || echo "No build log found"
 
+      - name: Show full Buildozer error block
+        run: |
+           echo "Searching for Buildozer error lines:"
+           grep -iE "error|exception|traceback|failed" artifacts/build_log.txt || echo "No error lines found"
+      
       # ⚠️ Warn if no APKs were found
       - name: Warn if no APKs found
         run: |
