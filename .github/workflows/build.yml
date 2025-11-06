@@ -116,7 +116,7 @@ jobs:
          buildozer -v android debug build 2>&1 | tee artifacts/build_log.txt
 
       - name: Accept Android SDK licenses
-        run: yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        run: yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses
         env:
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
 
