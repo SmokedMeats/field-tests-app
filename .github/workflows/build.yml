@@ -97,6 +97,7 @@ jobs:
           
       - name: Clean Buildozer cache
         run: rm -rf .buildozer
+             rm -rf ~/.buildozer
   
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
