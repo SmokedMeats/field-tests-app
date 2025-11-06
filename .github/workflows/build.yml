@@ -87,18 +87,15 @@ jobs:
             ${{ runner.os }}-android-ndk-
 
       # Install system packages required for Buildozer and Python-for-Android
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
-          sudo apt update
-          sudo apt-get install -y \
-            build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
-            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
-            libavformat-dev libavcodec-dev libunwind-dev zlib1g-dev \
-            libsqlite3-dev sqlite3 bzip2 libbz2-dev openssl libgdbm-dev \
-            libgdbm-compat-dev liblzma-dev libreadline-dev uuid-dev \
-            libgstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-            zip unzip autoconf libtool pkg-config libncurses5-dev \
-            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
+         sudo apt-get update
+         sudo apt-get install -y \
+           build-essential git unzip zip openjdk-8-jdk \
+           autoconf automake libtool pkg-config \
+           libffi-dev libssl-dev libncurses5-dev zlib1g-dev libsqlite3-dev libbz2-dev liblzma-dev \
+           libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
+           libswscale-dev libavformat-dev libavcodec-dev
 
       # Accept Android SDK licenses
       - name: Accept Android SDK licenses
