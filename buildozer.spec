@@ -42,7 +42,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,reportlab,plyer,pyjnius==1.4.0,Cython==0.29.36
+requirements = python3,kivy,plyer,pyjnius==1.4.0,Cython==0.29.36
 #android.arch = arm64-v8a #edited by Jake - - android.arch: This is the older configuration key used to specify a single architecture like armeabi-v7a or arm64-v8a. It’s now deprecated in favor of the plural form.
 #- android.archs: This is the current and recommended key. It allows you to specify multiple architectures as a comma-separated list, e.g.:
 
