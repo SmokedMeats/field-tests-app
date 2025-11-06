@@ -100,7 +100,7 @@ jobs:
              rm -rf ~/.buildozer
              
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+        run: yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
         env:
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
   
