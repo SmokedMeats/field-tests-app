@@ -26,6 +26,26 @@ jobs:
           echo "date=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
+      # ✅ Step 1: Pin Java to version 8 for compatibility with Android toolchain
+      - name: Setup Java 8 for Buildozer
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+
+      # Set up Python 3.10
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # Install pip dependencies including pinned Cython and plyer from GitHub
+      - name: Install pip dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
+      
+      # Clean Buildozer Cache
       - name: Clean Buildozer cache
         run: rm -rf .buildozer
              rm -rf ~/.buildozer
@@ -80,25 +100,6 @@ jobs:
             zip unzip autoconf libtool pkg-config libncurses5-dev \
             libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
 
-      # ✅ Step 1: Pin Java to version 8 for compatibility with Android toolchain
-      - name: Setup Java 8 for Buildozer
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '8'
-
-      # Set up Python 3.10
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      # Install pip dependencies including pinned Cython and plyer from GitHub
-      - name: Install pip dependencies
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33 git+https://github.com/kivy/plyer.git
-               
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
@@ -115,6 +116,7 @@ jobs:
          mkdir -p artifacts # Build only (no deploy/run) and fail on error; capture verbose log
          buildozer -v android debug build 2>&1 | tee artifacts/build_log.txt
 
+      # Accept Android SDK licenses
       - name: Accept Android SDK licenses
         run: yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
 
