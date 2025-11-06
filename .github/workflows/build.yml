@@ -53,6 +53,9 @@ jobs:
         run: rm -rf .buildozer
              rm -rf ~/.buildozer
 
+      - name: Clean Android build cache
+        run: rm -rf .buildozer/android
+
       # Cache global Buildozer directory to avoid re-downloading SDK/NDK
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
