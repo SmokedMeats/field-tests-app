@@ -134,8 +134,14 @@ class HomeScreen(Screen):
 
     def save_general_info(self):
         info = {
-            "inspector_name": self.inspector_name
-
+            "inspector_name": self.inspector_name.text,
+            "inspector_initials": self.inspector_initials.text,
+            "district": self.district.text,
+            "date": self.date
+        }
+        with open(GENERAL_INFO_FILE, 'w') as f:
+            json.dump(info, f)
+        
 # Curves Screen
 class CurvesScreen(Screen):
     def __init__(self, **kwargs):
