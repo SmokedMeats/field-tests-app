@@ -39,6 +39,9 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install Autotools for sqlite3 recipe
+        run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool
+
       # Install pip dependencies including pinned Cython and plyer from GitHub
       - name: Install pip dependencies
         run: |
