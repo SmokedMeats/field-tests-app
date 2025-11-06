@@ -100,6 +100,16 @@ jobs:
             zip unzip autoconf libtool pkg-config libncurses5-dev \
             libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
 
+      # Accept Android SDK licenses
+      - name: Accept Android SDK licenses
+        run: yes | /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=/home/runner/.buildozer/android/platform/android-sdk --licenses
+
+      - name: Install Android Build Tools
+        run: /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=/home/runner/.buildozer/android/platform/android-sdk "build-tools;34.0.0"
+
+      - name: Install Android API level 34
+        run: /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=/home/runner/.buildozer/android/platform/android-sdk "platforms;android-34"
+
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
@@ -115,16 +125,6 @@ jobs:
          echo "Using NDK: $ANDROID_NDK"
          mkdir -p artifacts # Build only (no deploy/run) and fail on error; capture verbose log
          buildozer -v android debug build 2>&1 | tee artifacts/build_log.txt
-
-      # Accept Android SDK licenses
-      - name: Accept Android SDK licenses
-        run: yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
-
-      - name: Install Android Build Tools
-        run: $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "build-tools;34.0.0"
-
-      - name: Install Android API level 34
-        run: $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-34"
       
         # Show output files to help locate APK if bin/*.apk is missing
       - name: Show build output
