@@ -155,34 +155,35 @@ jobs:
       # 🔍 Inspect Buildozer output directories
       - name: Inspect Buildozer output
         run: |
-                      echo "Listing contents of bin/"
-                      ls -la bin || true
+         echo "Listing contents of bin/"
+         ls -la bin || true
 
-                      echo "Listing contents of .buildozer/android/platform"
-                      ls -la .buildozer/android/platform || true
+         echo "Listing contents of .buildozer/android/platform"
+         ls -la .buildozer/android/platform || true
 
-                      echo "Listing contents of .buildozer/android/platform/build"
-                      ls -la .buildozer/android/platform/build || true
+         echo "Listing contents of .buildozer/android/platform/build-arm64-v8a"
+         ls -la .buildozer/android/platform/build-arm64-v8a || true
 
-                      echo "Searching for APKs anywhere in the project"
-                      find . -name "*.apk" || true
+         echo "Searching for Gradle logs"
+         find .buildozer/android/platform/build-arm64-v8a -name "*.log" || true
 
-                      echo "Listing contents of .buildozer/android/platform/build-arm64-v8a_armeabi-v7a"
-                      ls -la .buildozer/android/platform/build-arm64-v8a_armeabi-v7a
+         echo "Searching for APKs anywhere in the project"
+         find . -name "*.apk" || echo "No APKs found"
 
-                      echo "Searching for Gradle logs"
-                      find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a -name "*.log" || true
+         echo "Searching for APKs inside .buildozer"
+         find .buildozer -type f -name "*.apk" || echo "No APKs found in .buildozer"
 
-                      find .buildozer -type f -name "*.apk"
+         echo "Listing all subfolders and contents of bin/"
+         ls -laR bin || true
 
-                      echo "Listing all subfolders and contents of bin"
-                      ls -laR bin
+         echo "Listing contents of dists/"
+         ls -la .buildozer/android/platform/build-arm64-v8a/dists || true
 
-                      echo "Listing contents of dists/"
-                      ls -la .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists || true
+         echo "Recursively searching for APKs inside dists/"
+         find .buildozer/android/platform/build-arm64-v8a/dists -name "*.apk" || echo "No APKs found in dists"
 
-                      echo "Recursively searching for APKs inside dists/"
-                      find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/dists -name "*.apk" || true
+         echo "Searching for APKs anywhere in the project"
+         find . -name "*.apk" || echo "No APKs found"
 
       # ✅ List all APKs to verify build output
       - name: List APK files
