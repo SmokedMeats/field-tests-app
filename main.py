@@ -16,8 +16,9 @@ from kivy.properties import ListProperty
 from kivy.clock import Clock
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from android.permissions import request_permissions, Permission # type: ignore
+from android.permissions import request_permissions, Permission  # type: ignore
 import asyncio
+import platform
 
 # File storage setup
 BASE_DIR = Path(os.path.expanduser("~/.fieldtests"))
@@ -48,7 +49,7 @@ def save_recent_entry(field, value):
         recent[field] = []
     if value and value not in recent[field]:
         recent[field].insert(0, value)
-        recent[field] = recent[field][:5]  # Keep last 5
+        recent[field] = recent[field][:5]
         with open(RECENT_ENTRIES_FILE, 'w') as f:
             json.dump(recent, f)
 
@@ -121,7 +122,7 @@ class HomeScreen(Screen):
         passcode = TextInput(hint_text="Enter Passcode", password=True)
         content.add_widget(passcode)
         content.add_widget(Button(text="Submit", on_press=lambda x: self.verify_passcode(passcode.text, target)))
-        Popupacts=Popup(title="Passcode", content=content, size_hint=(0.5, 0.5)).open()
+        Popup(title="Passcode", content=content, size_hint=(0.5, 0.5)).open()
 
     def verify_passcode(self, passcode, target):
         if hashlib.sha256(passcode.encode()).hexdigest() == ADMIN_PASSCODE_HASH:
@@ -133,13 +134,7 @@ class HomeScreen(Screen):
 
     def save_general_info(self):
         info = {
-            "inspector_name": self.inspector_name.text,
-            "inspector_initials": self.inspector_initials.text,
-            "district": self.district.text,
-            "date": self.date
-        }
-        with open(GENERAL_INFO_FILE, 'w') as f:
-            json.dump(info, f)
+            "inspector_name": self.inspector_name
 
 # Curves Screen
 class CurvesScreen(Screen):
@@ -150,9 +145,12 @@ class CurvesScreen(Screen):
         self.rv.data = []
         layout.add_widget(TextInput(hint_text="Search", on_text=self.search))
         layout.add_widget(self.rv)
-        layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        layout.add_widget(Button(text="Home", on_press=self.go_home))
         self.add_widget(layout)
         self.load_curves()
+
+    def go_home(self, instance):
+        self.manager.current = 'home'
 
     def load_curves(self):
         self.rv.data = [
@@ -176,11 +174,14 @@ class FormsScreen(Screen):
         self.rv.data = []
         layout.add_widget(TextInput(hint_text="Search by ID/Name/Date", on_text=self.search))
         layout.add_widget(self.rv)
-        layout.add_widget(Button(text="Create New Form", on_press=lambda x: self.create_form()))
+        layout.add_widget(Button(text="Create New Form", on_press=self.create_form))
         layout.add_widget(Button(text="Archive Selected", on_press=self.archive_forms))
-        layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        layout.add_widget(Button(text="Home", on_press=self.go_home))
         self.add_widget(layout)
         self.load_forms()
+
+    def go_home(self, instance):
+        self.manager.current = 'home'
 
     def load_forms(self):
         forms = []
@@ -214,7 +215,7 @@ class FormsScreen(Screen):
             if term in d["text"].lower()
         ]
 
-    def create_form(self):
+    def create_form(self, instance=None):
         info = json.load(open(GENERAL_INFO_FILE))
         counter = len(list(FORMS_DIR.glob(f"F{info['inspector_initials']}*.json"))) + 1
         form_id = f"F{info['inspector_initials']}{datetime.now().strftime('%Y%m%d_%H%M')}_{counter}"
@@ -247,6 +248,9 @@ class FormScreen(Screen):
         self.layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
         self.add_widget(self.layout)
 
+    def go_home(self, instance):
+        self.manager.current = 'home'
+
     def load_form(self, form_id):
         self.layout.clear_widgets()
         form_path = FORMS_DIR / form_id / "form.json"
@@ -277,64 +281,21 @@ class FormScreen(Screen):
         if self.form['status'] == "Pending":
             self.layout.add_widget(Button(text="Complete Form", on_press=self.complete_form))
         self.layout.add_widget(Button(text="Submit Test", on_press=self.submit_test))
-        self.layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        self.layout.add_widget(Button(text="Home", on_press=self.go_home))
 
-    def load_curve_data(self, instance, value):
-        if value:
-            curve = json.load(open(CURVES_DIR / f"{value}.json"))
-            for field in self.curve_data_labels:
-                self.curve_data_labels[field].text = f"{field.replace('_', ' ').title()}: {curve.get(field, '')}"
-
-    def submit_test(self, instance):
-        if not all([self.inspector_name.text, self.project_no.text, self.contract_no.text, self.curve_name.text]):
-            Popup(title="Error", content=Label(text="All required fields must be filled"), size_hint=(0.5, 0.3)).open()
-            return
-        self.save_form()
-        self.manager.get_screen(f"{self.test_type.text.lower()}_test").load_test(self.form['form_id'])
-        self.manager.current = f"{self.test_type.text.lower()}_test"
-
-    def save_form(self):
-        self.form.update({
-            "inspector_name": self.inspector_name.text,
-            "project_no": self.project_no.text,
-            "contract_no": self.contract_no.text,
-            "curve_name": self.curve_name.text,
-            "last_update": datetime.now().isoformat()
-        })
-        form_dir = FORMS_DIR / self.form['form_id']
-        with open(form_dir / "form.json", 'w') as f:
-            json.dump(self.form, f)
-        for field in ["inspector_name", "project_no", "contract_no"]:
-            save_recent_entry(field, getattr(self, field).text)
-
-    def close_form(self, instance):
-        if self.form['status'] != "Incomplete":
-            return
-        content = BoxLayout(orientation='vertical')
-        reason = Spinner(values=["Rain", "Failed Moisture", "Work Area not Accessible", "Other"])
-        notes = TextInput(hint_text="Notes (if Other)")
-        content.add_widget(reason)
-        content.add_widget(notes)
-        content.add_widget(Button(text="Submit", on_press=lambda x: self.save_close_reason(reason.text, notes.text)))
-        Popup(title="Close Form", content=content, size_hint=(0.5, 0.5)).open()
-
-    def save_close_reason(self, reason, notes):
-        self.form['close_reason'] = reason + (f": {notes}" if reason == "Other" and notes else "")
-        self.form['status'] = "Closed"
-        self.save_form()
-        self.manager.current = 'forms'
-
-    def complete_form(self, instance):
-        self.form['status'] = "Complete"
-        self.save_form()
-        self.manager.current = 'forms'
-
+    # ... rest of FormScreen continues in Part 4 …
 # Moisture Test Screen
 class MoistureTestScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
         self.add_widget(self.layout)
+
+    def go_back(self, instance):
+        self.manager.current = 'form'
+
+    def go_home(self, instance):
+        self.manager.current = 'home'
 
     def load_test(self, form_id):
         self.form_id = form_id
@@ -368,8 +329,8 @@ class MoistureTestScreen(Screen):
         self.layout.add_widget(self.result)
         self.layout.add_widget(self.notes)
         self.layout.add_widget(Button(text="Submit", on_press=self.submit))
-        self.layout.add_widget(Button(text="Back", on_press=lambda x: self.manager.current = 'form'))
-        self.layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        self.layout.add_widget(Button(text="Back", on_press=self.go_back))
+        self.layout.add_widget(Button(text="Home", on_press=self.go_home))
         self.wet_weight.bind(text=self.calculate)
         self.dry_weight.bind(text=self.calculate)
 
@@ -438,12 +399,18 @@ class AdminScreen(Screen):
         self.rv.data = []
         layout.add_widget(TextInput(hint_text="Search", on_text=self.search))
         layout.add_widget(self.rv)
-        layout.add_widget(Button(text="Add New Curve", on_press=lambda x: self.manager.current = 'add_curve'))
+        layout.add_widget(Button(text="Add New Curve", on_press=self.go_add_curve))
         layout.add_widget(Button(text="Archive Curve", on_press=self.archive_curve))
         layout.add_widget(Button(text="Change Passcode", on_press=lambda x: self.manager.get_screen('home').show_passcode_popup('change_passcode')))
-        layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        layout.add_widget(Button(text="Home", on_press=self.go_home))
         self.add_widget(layout)
         self.load_curves()
+
+    def go_add_curve(self, instance):
+        self.manager.current = 'add_curve'
+
+    def go_home(self, instance):
+        self.manager.current = 'home'
 
     def load_curves(self):
         self.rv.data = [
@@ -480,45 +447,33 @@ class AddCurveScreen(Screen):
         self.moisture_limits = BoxLayout()
         self.moisture_limits.add_widget(TextInput(hint_text="Lower Limit"))
         self.moisture_limits.add_widget(TextInput(hint_text="Upper Limit"))
-        self.notes = TextInput(hint_text="Notes")
-        for w in [self.name, self.soil_type, self.source, self.sample_id, self.ngi, self.target_dtv, self.optimum_moisture, self.moisture_limits, self.notes]:
-            layout.add_widget(w)
-        layout.add_widget(Button(text="Save", on_press=self.save))
-        layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
-        self.add_widget(layout)
-
-    def save(self, instance):
-        curve = {
-            "name": self.name.text,
-            "soil_type": self.soil_type.text,
-            "source": self.source.text,
-            "sample_id": self.sample_id.text,
-            "ngi": self.ngi.text,
-            "target_dtv": self.target_dtv.text,
-            "optimum_moisture": float(self.optimum_moisture.text),
-            "moisture_limits": [float(self.moisture_limits.children[1].text), float(self.moisture_limits.children[0].text)],
-            "notes": self.notes.text
-        }
-        with open(CURVES_DIR / f"{self.name.text}.json", 'w') as f:
-            json.dump(curve, f)
-        self.manager.current = 'admin'
+        self.notes = TextInput(hint_text="Notes
 
 # Archive Screen
 class ArchiveScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical')
-        layout.add_widget(Button(text="Archived Curves", on_press=lambda x: self.manager.current = 'archived_curves'))
-        layout.add_widget(Button(text="Archived Forms", on_press=lambda x: self.manager.current = 'archived_forms'))
-        layout.add_widget(Button(text="Home", on_press=lambda x: self.manager.current = 'home'))
+        layout.add_widget(Button(text="Archived Curves", on_press=self.go_archived_curves))
+        layout.add_widget(Button(text="Archived Forms", on_press=self.go_archived_forms))
+        layout.add_widget(Button(text="Home", on_press=self.go_home))
         self.add_widget(layout)
+
+    def go_archived_curves(self, instance):
+        self.manager.current = 'archived_curves'
+
+    def go_archived_forms(self, instance):
+        self.manager.current = 'archived_forms'
+
+    def go_home(self, instance):
+        self.manager.current = 'home'
 
 # Archived Curves Screen
 class ArchivedCurvesScreen(CurvesScreen):
     def load_curves(self):
         self.rv.data = [
             {"text": f"{c['name']} | {c['source']} | {c['sample_id']} | {c['ngi']}", "curve": c}
-            for cHome in [json.load(open(f)) for f in ARCHIVED_CURVES_DIR.glob("*.json")]
+            for c in [json.load(open(f)) for f in ARCHIVED_CURVES_DIR.glob("*.json")]
         ]
 
 # Archived Forms Screen
@@ -535,7 +490,7 @@ class ArchivedFormsScreen(FormsScreen):
         forms.sort(key=lambda x: x["form"]["date"])
         self.rv.data = forms
 
-    def create_form(self):
+    def create_form(self, instance=None):
         pass  # No creation in archive
 
     def archive_forms(self, instance):
