@@ -122,6 +122,9 @@ jobs:
 
       - name: Install Android Build Tools
         run: $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "build-tools;34.0.0"
+
+      - name: Install Android API level 34
+        run: $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-34"
       
       - name: Show Buildozer log tail
         run: |
