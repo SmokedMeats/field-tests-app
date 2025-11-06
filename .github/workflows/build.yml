@@ -110,6 +110,12 @@ jobs:
       - name: Install Android API level 34
         run: /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=/home/runner/.buildozer/android/platform/android-sdk "platforms;android-34"
 
+      - name: Check Python syntax
+        run: python -m py_compile main.py
+
+      - name: Check file encoding
+        run: file main.py
+
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
