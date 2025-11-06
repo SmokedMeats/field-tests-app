@@ -116,6 +116,9 @@ jobs:
       - name: Check file encoding
         run: file main.py
 
+      - name: Clean Buildozer artifacts
+        run: buildozer android clean
+
       # ✅ Step 2: Unify NDK paths to r25b for consistent recipe behavior
       - name: Build with Buildozer (verbose)
         id: buildozer
